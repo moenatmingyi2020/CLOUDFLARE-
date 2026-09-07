@@ -158,8 +158,12 @@ async function handleRequest(request) {
     const expires = new Date(Date.now() + 86400 * 365 * 10 * 1000).toUTCString();
     responseHeaders.append(
       "Set-Cookie",
-      `${cookieName}=${expectedAuthCookie}; Expires=${expires}; Domain=${currentHost}; Path=/; Secure; HttpOnly; SameSite=Lax`,
+      // Do not add Domain here. A host-only cookie is accepted reliably on
+      // custom domains, workers.dev domains, and preview deployments alike.
+      `${cookieName}=${expectedAuthCookie}; Expires=${expires}; Max-Age=${86400 * 365 * 10}; Path=/; Secure; HttpOnly; SameSite=Lax`,
     );
+    // Do not let a cached token response hide the Set-Cookie header.
+    responseHeaders.set("Cache-Control", "private, no-store");
   }
 
   return new Response(upstreamResponse.body, {
